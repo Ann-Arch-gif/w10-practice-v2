@@ -1,0 +1,62 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import '../../../model/songs/song.dart';
+import '../../dtos/song_dto.dart';
+import 'song_repository.dart';
+
+class SongRepositoryFirebase extends SongRepository {
+  static const String _baseHost =
+      'test-a2a77-default-rtdb.asia-southeast1.firebasedatabase.app';
+
+  final Uri songsUri = Uri.https(
+    _baseHost,
+    '/songs.json',
+  );
+
+  @override
+  Future<List<Song>> fetchSongs() async {
+    final http.Response response = await http.get(songsUri);
+
+    if (response.statusCode == 200) {
+      // 1 - Send the retrieved list of songs
+      Map<String, dynamic> songJson = json.decode(response.body);
+
+      List<Song> result = [];
+      for (final entry in songJson.entries) {
+        result.add(SongDto.fromJson(entry.key, entry.value));
+      }
+      return result;
+    } else {
+      // 2- Throw expcetion if any issue
+      throw Exception('Failed to load posts');
+    }
+  }
+
+  @override
+  Future<Song?> fetchSongById(String id) async {
+    final uri = Uri.https(_baseHost, '/songs/$id.json');
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> songJson = json.decode(response.body);
+      return SongDto.fromJson(id, songJson);
+    } else {
+      throw Exception('Failed to fetch song $id');
+    }
+  }
+
+  @override
+  Future<void> likeSong(String songId, int currentLikes) async {
+    final uri = Uri.https(_baseHost, '/songs/$songId/likes.json');
+    final response = await http.put(
+      uri,
+      body: json.encode(currentLikes + 1),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to like song $songId');
+    }
+  }
+}
