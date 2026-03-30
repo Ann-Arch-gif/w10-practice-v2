@@ -3,11 +3,18 @@ import 'artist_repository.dart';
 
 class ArtistRepositoryMock implements ArtistRepository {
   final List<Artist> _artists = [];
+  List<Artist>? _cachedArtists;
 
   @override
-  Future<List<Artist>> fetchArtists() async {
+  Future<List<Artist>> fetchArtists({bool forceFetch = false}) async {
+    // 1. Return cache if available
+    if (!forceFetch && _cachedArtists != null) return _cachedArtists!;
+
+    // 2. Otherwise fetch (simulated delay)
     return Future.delayed(Duration(seconds: 4), () {
-      throw _artists;
+      // 3. Store in memory
+      _cachedArtists = _artists;
+      return _cachedArtists!;
     });
   }
 
